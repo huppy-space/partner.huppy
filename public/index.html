@@ -118,7 +118,7 @@
                                     <div class="form-group last">
                                         <input id="btn_register" type="submit" class="btn btn-warning btn-block btn-lg" value="ลงทะเบียน">
                                     </div>
-                                    <p class="privacy text-center">โปรดอ่าน <a href="privacy.html">ข้อตกลงเมื่อเป็นจุดรับพัสดุ</a>.</p>
+                                    <p class="privacy text-center">เป็นจุดรับพัสดุแล้ว? <a href="signin/index.html">เข้าสู่ระบบ</a>.</p>
                                 </form>
                             </div>
 
@@ -592,7 +592,6 @@
         <script src="js/owl.carousel.min.js"></script>
         <script>
           new WOW().init();
-          var pickuppoint = firebase.database().ref('pickuppoint/');
           var contact = firebase.database().ref('contact/');
 
           $('#contact-form').submit(function (ev) {
@@ -616,97 +615,117 @@
            ev.preventDefault(); // to stop the form from submitting
            /* Validations go here */
 
-           $("#btn_register").prop('disabled', true);
-           $("#btn_register").prop('value', 'กำลังลงทะเบียน...');
-
-           var name = $('#name').val();
+           var fullname = $('#fullname').val();
            var password = $('#password').val();
            var email = $('#email').val();
            var tel = $('#tel').val();
            var address = $('#address').val();
            var file = document.getElementById('file').files[0];
 
-           // Points to the root reference
-            var storageRef = firebase.storage().ref();
+           firebase.auth().createUserWithEmailAndPassword(email, password).then(function(){
+             $("#btn_register").prop('disabled', true);
+             $("#btn_register").prop('value', 'กำลังลงทะเบียน...');
 
-            // Points to 'images'
-            var imagesRef = storageRef.child('images');
+            // Points to the root reference
+             var storageRef = firebase.storage().ref();
 
-            // Points to 'images/space.jpg'
-            // Note that you can use variables to create child values
-            // filename will random name to advoid existing name.
-            var fileName = Math.random().toString(36).substring(7) + file.name;
-            var spaceRef = imagesRef.child(fileName);
+             // Points to 'images'
+             var imagesRef = storageRef.child('images');
 
-            // File path is 'images/space.jpg'
-            var path = spaceRef.fullPath
+             // Points to 'images/space.jpg'
+             // Note that you can use variables to create child values
+             // filename will random name to advoid existing name.
+             var fileName = Math.random().toString(36).substring(7) + file.name;
+             var spaceRef = imagesRef.child(fileName);
 
-            // File name is 'space.jpg'
-            var name = spaceRef.name
+             // File path is 'images/space.jpg'
+             var path = spaceRef.fullPath
 
-            // Points to 'images'
-            var imagesRef = spaceRef.parent;
+             // File name is 'space.jpg'
+             var name = spaceRef.name
 
-            // Create the file metadata
-            var metadata = {
-                contentType: 'image/jpeg'
-            };
+             // Points to 'images'
+             var imagesRef = spaceRef.parent;
 
-            // Upload file and metadata to the object 'images/mountains.jpg'
-            var uploadTask = storageRef.child('pickuppoint/' + fileName).put(file, metadata);
+             // Create the file metadata
+             var metadata = {
+                 contentType: 'image/jpeg'
+             };
 
-            // Listen for state changes, errors, and completion of the upload.
-            uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
-                function (snapshot) {
-                    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-                    var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log('Upload is ' + progress + '% done');
-                    switch (snapshot.state) {
-                        case firebase.storage.TaskState.PAUSED: // or 'paused'
-                            console.log('Upload is paused');
-                            break;
-                        case firebase.storage.TaskState.RUNNING: // or 'running'
-                            console.log('Upload is running');
-                            break;
-                    }
-                }, function (error) {
+             // Upload file and metadata to the object 'images/mountains.jpg'
+             var uploadTask = storageRef.child('pickuppoint/' + fileName).put(file, metadata);
 
-                    // A full list of error codes is available at
-                    // https://firebase.google.com/docs/storage/web/handle-errors
-                    switch (error.code) {
-                        case 'storage/unauthorized':
-                            // User doesn't have permission to access the object
-                            console.log("permission denied.");
-                            break;
+             // Listen for state changes, errors, and completion of the upload.
+             uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+                 function (snapshot) {
+                     // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                     var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                     console.log('Upload is ' + progress + '% done');
+                     switch (snapshot.state) {
+                         case firebase.storage.TaskState.PAUSED: // or 'paused'
+                             console.log('Upload is paused');
+                             break;
+                         case firebase.storage.TaskState.RUNNING: // or 'running'
+                             console.log('Upload is running');
+                             break;
+                     }
+                 }, function (error) {
 
-                        case 'storage/canceled':
-                            // User canceled the upload
-                            console.log("user canceled the upload.");
-                            break;
+                     // A full list of error codes is available at
+                     // https://firebase.google.com/docs/storage/web/handle-errors
+                     switch (error.code) {
+                         case 'storage/unauthorized':
+                             // User doesn't have permission to access the object
+                             console.log("permission denied.");
+                             break;
 
-                        case 'storage/unknown':
-                            // Unknown error occurred, inspect error.serverResponse
-                            console.log("Unknown error occurred.");
-                            break;
-                    }
-                }, function () {
-                    // Upload completed successfully, now we can get the download URL
-                    // Create a new post reference with an auto-generated id
-                    var new_pickuppoint = pickuppoint.push();
-                    new_pickuppoint.set({
-                          fullname: fullname,
-                          email: email,
-                          phone: tel,
-                          address: address,
-                          password: password,
-                          status: 0,
-                          file: uploadTask.snapshot.downloadURL
-                      });
+                         case 'storage/canceled':
+                             // User canceled the upload
+                             console.log("user canceled the upload.");
+                             break;
 
-                      alert('ได้รับคำขอเป็นจุดรับพัสดุแล้วครับ ทางทีมงานจะติดต่อกลับภายใน 48 ชม.นะครับ');
-                      window.location = "index.html";
-                });
-             });
+                         case 'storage/unknown':
+                             // Unknown error occurred, inspect error.serverResponse
+                             console.log("Unknown error occurred.");
+                             break;
+                     }
+                 }, function () {
+                     // Upload completed successfully, now we can get the download URL
+                     // Create a new post reference with an auto-generated id
+                       firebase.auth().signInWithEmailAndPassword(email, password).then(function()
+                       {
+                         var pickuppoint = firebase.database().ref('pickuppoint/' + firebase.auth().currentUser.uid);
+                         pickuppoint.set({
+                               fullname: fullname,
+                               email: email,
+                               phone: tel,
+                               address: address,
+                               status: 0,
+                               income: 0,
+                               storage: 0,
+                               sent: 0,
+                               file: uploadTask.snapshot.downloadURL
+                           });
+
+                           window.location = "dashboard/index.html";
+
+                       }).catch(function(error) {
+                          // Handle Errors here.
+                          var errorCode = error.code;
+                          var errorMessage = error.message;
+                          // ...
+                          console.log(errorMessage);
+                       });
+                 });
+           }).catch(function(error) {
+             // Handle Errors here.
+             var errorCode = error.code;
+             var errorMessage = error.message;
+             // ...
+             alert(errorMessage);
+           });
+          });
+
         </script>
     </body>
 </html>
